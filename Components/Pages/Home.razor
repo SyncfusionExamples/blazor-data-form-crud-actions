@@ -1,0 +1,113 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@using Syncfusion.Blazor.DataForm
+@using Syncfusion.Blazor.Buttons
+@using Syncfusion.Blazor.Popups
+@using BlazorDataFormCRUD.Data
+
+<h3>Employee Management</h3>
+<SfDialog Visible=@IsVisible Width="300px" AllowDragging=true IsModal=true ShowCloseIcon=true Header="Employee Details">
+    <DialogTemplates>
+        <Content>
+            <SfDataForm ID="OrderEditForm" EditContext="editContext" OnSubmit="@SubmitForm" ButtonsAlignment="FormButtonsAlignment.Center">
+                <FormValidator>
+                    <DataAnnotationsValidator />
+                </FormValidator>
+                <FormItems>
+                    <FormAutoGenerateItems />
+                </FormItems>
+                <FormButtons>
+                    <SfButton IsPrimary=true>Save</SfButton>
+                </FormButtons>
+            </SfDataForm>
+        </Content>
+    </DialogTemplates>
+</SfDialog>
+<SfButton IsPrimary=true OnClick="Save">Add New</SfButton>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Employee ID</th>
+            <th>Name</th>
+            <th>Date Of Birth</th>
+            <th>Designation</th>
+            <th>Salary</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var employee in employeesList)
+        {
+            <tr>
+                <td>@employee.Id</td>
+                <td>@employee.Name</td>
+                <td>@employee.DateOfBirth</td>
+                <td>@employee.Designation</td>
+                <td>@employee.Salary</td>
+                <td>
+                    <SfButton @onclick="() => EditEmployee(employee)">Edit</SfButton>
+                    <SfButton @onclick="() => DeleteEmployee(employee.Id)">Delete</SfButton>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private bool IsVisible { get; set; } = false;
+    IEnumerable<EmployeeDetails> employeesList;
+    public EmployeeDetails EmployeeModel { get; set; } = new EmployeeDetails();
+    EditContext editContext;
+
+    EmployeeCrud employeeCrudService { get; set; } = new EmployeeCrud();
+
+    protected override void OnInitialized()
+    {
+        employeesList = employeeCrudService.GetAllEmployees();
+        editContext = new EditContext(EmployeeModel);
+        editContext.OnFieldChanged += EditContext_OnFieldChanged;
+    }
+    void SubmitForm()
+    {
+        if (editContext.Validate())
+        {
+            if (EmployeeModel.Id == 0)
+            {
+                employeeCrudService.AddEmployee(EmployeeModel);
+            }
+            else
+            {
+                employeeCrudService.UpdateEmployee(EmployeeModel);
+            }
+            EmployeeModel = new EmployeeDetails();
+            editContext = new EditContext(EmployeeModel);
+            employeesList = employeeCrudService.GetAllEmployees();
+            IsVisible = false;
+        }
+    }
+
+    void EditEmployee(EmployeeDetails employee)
+    {
+        IsVisible = true;
+        EmployeeModel = employee;
+        editContext = new EditContext(EmployeeModel);
+    }
+
+    void DeleteEmployee(int id)
+    {
+        employeeCrudService.DeleteEmployee(id);
+        employeesList = employeeCrudService.GetAllEmployees();
+    }
+    void Save()
+    {
+        EmployeeModel = new EmployeeDetails();
+        editContext = new EditContext(EmployeeModel);
+        // show the dialog
+        IsVisible = true;
+    }
+    private void EditContext_OnFieldChanged(object sender, FieldChangedEventArgs e)
+    {
+        
+    }
+
+}
